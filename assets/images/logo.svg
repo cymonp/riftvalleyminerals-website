@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Rift Valley Minerals logo">
+  <defs>
+    <linearGradient id="rvmGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5d76e"/>
+      <stop offset="55%" stop-color="#c9a227"/>
+      <stop offset="100%" stop-color="#8f7418"/>
+    </linearGradient>
+    <linearGradient id="rvmNugget" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe58a"/>
+      <stop offset="60%" stop-color="#e8c547"/>
+      <stop offset="100%" stop-color="#6e5710"/>
+    </linearGradient>
+    <filter id="rvmShine" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.6"/>
+    </filter>
+  </defs>
+  <!-- Circular gold border -->
+  <circle cx="50" cy="50" r="46" fill="none" stroke="url(#rvmGold)" stroke-width="2.5"/>
+  <!-- Mountain peak -->
+  <path d="M 18 72 L 50 18 L 82 72 Z" fill="none" stroke="url(#rvmGold)" stroke-width="2.8" stroke-linejoin="round"/>
+  <!-- Gold nugget faceted -->
+  <g filter="url(#rvmShine)">
+    <path d="M 38 48 L 46 37 L 60 40 L 64 54 L 56 64 L 41 61 Z" fill="url(#rvmNugget)" stroke="#6e5710" stroke-width="0.9" stroke-linejoin="round"/>
+  </g>
+  <path d="M 46 37 L 51 51 M 60 40 L 51 51 M 51 51 L 56 64 M 51 51 L 41 61 M 51 51 L 38 48 M 51 51 L 64 54" stroke="#6e5710" stroke-width="0.55" fill="none" opacity="0.55"/>
+  <!-- Shine highlight on nugget -->
+  <path d="M 46 40 L 50 43 L 52 41" stroke="#fff8d1" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <!-- Wavy horizon -->
+  <path d="M 20 70 Q 35 66 50 70 Q 65 74 80 70" fill="none" stroke="url(#rvmGold)" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 22 78 Q 36 75 50 78 Q 64 81 78 78" fill="none" stroke="url(#rvmGold)" stroke-width="2" stroke-linecap="round" opacity="0.92"/>
+  <path d="M 25 85 Q 38 83 50 85 Q 62 87 75 85" fill="none" stroke="url(#rvmGold)" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+</svg>

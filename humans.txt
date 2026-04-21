@@ -1,0 +1,21 @@
+/* TEAM */
+Company: Rift Valley Minerals Ltd.
+Role: Licensed Gold Exporter, Uganda
+Location: Kololo, Plot 8, 5th Street, Kampala, Uganda
+Contact: trade@riftvalleyminerals.com
+Phone: +256 700 315 881
+
+/* SITE */
+Last update: 2026/04
+Language: English
+Standards: HTML5, CSS3, ES2020
+Components: Responsive grid, semantic HTML, Schema.org JSON-LD
+
+/* COMPLIANCE */
+Regulatory framework: Uganda Mining Act; Anti-Money Laundering Act 2013;
+  OECD Due Diligence Guidance for Responsible Supply Chains of Minerals
+  from Conflict-Affected and High-Risk Areas, Supplement II on Gold.
+Registered: Uganda Registration Services Bureau (URSB)
+Supervised by: Uganda Financial Intelligence Authority (FIA),
+  Uganda Revenue Authority (URA), Ministry of Energy and Mineral
+  Development (MEMD).

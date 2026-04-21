@@ -1,0 +1,36 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node / build artifacts (if you add tooling later)
+node_modules/
+dist/
+build/
+.cache/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env / secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Deploy artifacts
+.vercel/
+.netlify/
+.firebase/
+
+# Source image working files (only if you don't want to commit huge originals)
+# *.psd
+# *.sketch
+# *.fig

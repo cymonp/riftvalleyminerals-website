@@ -1,0 +1,5 @@
+Contact: mailto:compliance@riftvalleyminerals.com
+Expires: 2027-04-20T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://riftvalleyminerals.com/.well-known/security.txt
+Policy: https://riftvalleyminerals.com/terms.html
