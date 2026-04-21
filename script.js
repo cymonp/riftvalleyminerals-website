@@ -73,7 +73,6 @@
 
   // IntersectionObserver for reveal + stat animations
   if ('IntersectionObserver' in window) {
-    // Auto-tag stats and review cards for reveal
     document.querySelectorAll('.review-card, section .split, .steps .step, .faq-item').forEach(el => {
       el.classList.add('reveal');
     });
@@ -112,4 +111,47 @@
       hero.style.backgroundPosition = `${50 + x}% ${50 + y}%, ${50 + x/2}% ${50 + y/2}%, center, center, center`;
     }, { passive: true });
   }
+
+  // Scroll-to-top button (injected into every page)
+  (function initScrollTop () {
+    const btn = document.createElement('button');
+    btn.className = 'scroll-top-btn';
+    btn.setAttribute('aria-label', 'Scroll to top');
+    btn.innerHTML = '↑';
+    document.body.appendChild(btn);
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('visible', window.scrollY > 400);
+    }, { passive: true });
+  })();
+
+  // Cookie consent banner (GDPR)
+  (function initCookieConsent () {
+    const KEY = 'rvm-cookie-consent';
+    if (localStorage.getItem(KEY)) return;
+    const banner = document.createElement('div');
+    banner.className = 'cookie-banner';
+    banner.setAttribute('role', 'dialog');
+    banner.setAttribute('aria-label', 'Cookie consent');
+    banner.innerHTML = `
+      <p>We use essential cookies and anonymous analytics to improve this site.
+      See our <a href="privacy.html">Privacy Policy</a> for details.</p>
+      <div class="actions">
+        <button class="cookie-decline" type="button">Essential only</button>
+        <button class="cookie-accept" type="button">Accept all</button>
+      </div>
+    `;
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => banner.classList.add('visible'));
+
+    const dismiss = (choice) => {
+      localStorage.setItem(KEY, choice);
+      localStorage.setItem(KEY + '-at', new Date().toISOString());
+      banner.classList.remove('visible');
+      banner.classList.add('dismissed');
+      setTimeout(() => banner.remove(), 500);
+    };
+    banner.querySelector('.cookie-accept').addEventListener('click', () => dismiss('accepted'));
+    banner.querySelector('.cookie-decline').addEventListener('click', () => dismiss('essential-only'));
+  })();
 })();
