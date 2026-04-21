@@ -1,0 +1,62 @@
+{
+  "name": "Rift Valley Minerals — Licensed Gold Exporters",
+  "short_name": "Rift Valley",
+  "description": "Uganda-licensed gold exporter supplying responsibly sourced gold to international refiners and professional bullion traders.",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1524",
+  "theme_color": "#0b1524",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["business", "finance", "shopping"],
+  "icons": [
+    {
+      "src": "assets/images/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Products",
+      "short_name": "Products",
+      "description": "Gold dore, refined bars, and kilobars",
+      "url": "/products.html"
+    },
+    {
+      "name": "How to Buy",
+      "short_name": "Buy",
+      "description": "Transaction process for institutional buyers",
+      "url": "/buy-gold.html"
+    },
+    {
+      "name": "Compliance",
+      "short_name": "Compliance",
+      "description": "OECD DDG and licensing",
+      "url": "/compliance.html"
+    },
+    {
+      "name": "Contact",
+      "short_name": "Contact",
+      "description": "Submit a buyer inquiry",
+      "url": "/contact.html"
+    }
+  ],
+  "prefer_related_applications": false
+}
