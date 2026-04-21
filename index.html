@@ -3,6 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google tag (gtag.js) — Google Ads + Google Analytics 4 -->
+<!-- REPLACE G-XXXXXXXXXX with your real GA4 Measurement ID and AW-XXXXXXXXX with your real Google Ads Conversion ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'wait_for_update': 500
+  });
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX', { 'anonymize_ip': true });
+  gtag('config', 'AW-XXXXXXXXX');
+</script>
 <title>Rift Valley Minerals — Licensed Gold Exporters, Uganda | Bulk Gold Bars &amp; Dore</title>
 <meta name="description" content="Rift Valley Minerals is a Uganda-licensed gold exporter with 14+ years of international operations, 2,500 kg+ inventory, and 2,000+ completed transactions across 12 countries. Supplying LBMA refiners and professional bullion traders with responsibly sourced gold bars and dore.">
 <meta name="keywords" content="gold buyers Africa, Uganda gold exporter, buy gold bars Uganda, LBMA dore, bulk gold bars, gold refiner Africa, licensed gold trader, Kampala gold, OECD due diligence gold, responsible gold sourcing">

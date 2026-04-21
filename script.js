@@ -1,4 +1,37 @@
 (function () {
+  // ==========================================================================
+  // Google Ads / GA4 conversion tracking configuration
+  // ==========================================================================
+  // REPLACE placeholders below with your real Google Ads Conversion ID + labels
+  // from https://ads.google.com → Tools → Conversions.
+  // Create ONE conversion action per event (lead form, phone, email, compliance
+  // pack request) and paste the "conversion label" (string after the slash).
+  const ADS_CONFIG = {
+    adsId: 'AW-XXXXXXXXX',
+    conversions: {
+      lead_form:        'AW-XXXXXXXXX/ABC123-form',     // contact form submit
+      phone_click:      'AW-XXXXXXXXX/ABC123-phone',    // tel: link click
+      email_click:      'AW-XXXXXXXXX/ABC123-email',    // mailto: click
+      compliance_pack:  'AW-XXXXXXXXX/ABC123-docs',     // compliance downloads
+      begin_checkout:   'AW-XXXXXXXXX/ABC123-cta'       // "Start a Transaction" CTA
+    }
+  };
+
+  const track = (eventName, params) => {
+    if (typeof gtag === 'function') gtag('event', eventName, params || {});
+  };
+  const trackConversion = (sendTo, value, extra) => {
+    if (typeof gtag !== 'function') return;
+    gtag('event', 'conversion', Object.assign({
+      send_to: sendTo,
+      value: value || 1.0,
+      currency: 'USD'
+    }, extra || {}));
+  };
+
+  // ==========================================================================
+  // Mobile nav toggle
+  // ==========================================================================
   const toggle = document.querySelector('.menu-toggle');
   const nav = document.querySelector('.nav');
   if (toggle && nav) {
@@ -9,7 +42,7 @@
     });
   }
 
-  // Highlight active nav link based on current page
+  // Highlight active nav link
   const path = location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('.nav a').forEach(a => {
     const href = a.getAttribute('href');
@@ -18,7 +51,7 @@
     }
   });
 
-  // Simple live-price placeholder (static reference — swap with a feed when available)
+  // Indicative LBMA price widget (placeholder)
   const priceEl = document.getElementById('live-price');
   if (priceEl) {
     const base = 2340;
@@ -26,7 +59,9 @@
     priceEl.textContent = 'USD $' + (base + jitter).toFixed(2) + ' / oz';
   }
 
-  // Contact form — soft handler (demo only; replace action/endpoint for production)
+  // ==========================================================================
+  // Contact form handler + conversion
+  // ==========================================================================
   const form = document.querySelector('form.contact-form');
   if (form) {
     form.addEventListener('submit', (e) => {
@@ -37,10 +72,75 @@
         form.reset();
         ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      // Fire Google Ads + GA4 conversion for lead
+      const buyerType = form.querySelector('#btype') ? form.querySelector('#btype').value : '';
+      const product = form.querySelector('#product') ? form.querySelector('#product').value : '';
+      trackConversion(ADS_CONFIG.conversions.lead_form, 100.0, {
+        event_category: 'lead',
+        event_label: buyerType || 'buyer_inquiry'
+      });
+      track('generate_lead', {
+        form_name: 'buyer_inquiry',
+        buyer_type: buyerType,
+        product_interest: product,
+        currency: 'USD',
+        value: 100.0
+      });
     });
   }
 
-  // Header shadow on scroll
+  // ==========================================================================
+  // Phone + email click tracking
+  // ==========================================================================
+  document.querySelectorAll('a[href^="tel:"]').forEach(a => {
+    a.addEventListener('click', () => {
+      trackConversion(ADS_CONFIG.conversions.phone_click, 25.0, {
+        event_category: 'engagement',
+        event_label: 'phone_click'
+      });
+      track('phone_click', { phone: a.getAttribute('href').replace('tel:', '') });
+    });
+  });
+
+  document.querySelectorAll('a[href^="mailto:"]').forEach(a => {
+    a.addEventListener('click', () => {
+      trackConversion(ADS_CONFIG.conversions.email_click, 15.0, {
+        event_category: 'engagement',
+        event_label: 'email_click'
+      });
+      track('email_click', { email: a.getAttribute('href').replace('mailto:', '') });
+    });
+  });
+
+  // Primary CTA buttons → "begin_checkout" style event
+  document.querySelectorAll('.btn-primary').forEach(btn => {
+    btn.addEventListener('click', () => {
+      trackConversion(ADS_CONFIG.conversions.begin_checkout, 50.0, {
+        event_category: 'engagement',
+        event_label: 'primary_cta',
+        label_text: (btn.textContent || '').trim().slice(0, 60)
+      });
+      track('cta_click', { cta_label: (btn.textContent || '').trim().slice(0, 60) });
+    });
+  });
+
+  // Compliance-pack "Request access" links
+  document.querySelectorAll('.download-card .req-link').forEach(a => {
+    a.addEventListener('click', () => {
+      const doc = a.closest('.download-card').querySelector('h3');
+      trackConversion(ADS_CONFIG.conversions.compliance_pack, 30.0, {
+        event_category: 'engagement',
+        event_label: doc ? doc.textContent.trim() : 'compliance_doc'
+      });
+      track('request_document', {
+        document: doc ? doc.textContent.trim() : 'unknown'
+      });
+    });
+  });
+
+  // ==========================================================================
+  // Header scroll shadow
+  // ==========================================================================
   const header = document.querySelector('.site-header');
   if (header) {
     const onScroll = () => {
@@ -51,7 +151,9 @@
     onScroll();
   }
 
-  // Animate stat numbers counting up on scroll
+  // ==========================================================================
+  // Stat counter + reveal-on-scroll
+  // ==========================================================================
   const animateCount = (el, finalText) => {
     const match = finalText.match(/^([\d,]+)(.*)$/);
     if (!match) { el.textContent = finalText; return; }
@@ -71,12 +173,10 @@
     requestAnimationFrame(tick);
   };
 
-  // IntersectionObserver for reveal + stat animations
   if ('IntersectionObserver' in window) {
     document.querySelectorAll('.review-card, section .split, .steps .step, .faq-item').forEach(el => {
       el.classList.add('reveal');
     });
-
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -93,7 +193,6 @@
         }
       });
     }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-
     document.querySelectorAll('.stat-num').forEach(el => {
       el.setAttribute('data-final', el.textContent.trim());
       el.textContent = '0';
@@ -102,7 +201,7 @@
     document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
   }
 
-  // Parallax-ish subtle tilt on hero
+  // Parallax tilt on hero
   const hero = document.querySelector('.hero');
   if (hero && window.matchMedia('(min-width: 900px)').matches) {
     window.addEventListener('mousemove', (e) => {
@@ -112,7 +211,9 @@
     }, { passive: true });
   }
 
-  // Scroll-to-top button (injected into every page)
+  // ==========================================================================
+  // Scroll-to-top
+  // ==========================================================================
   (function initScrollTop () {
     const btn = document.createElement('button');
     btn.className = 'scroll-top-btn';
@@ -125,16 +226,37 @@
     }, { passive: true });
   })();
 
-  // Cookie consent banner (GDPR)
+  // ==========================================================================
+  // Cookie consent + Google Consent Mode v2 integration
+  // ==========================================================================
   (function initCookieConsent () {
     const KEY = 'rvm-cookie-consent';
-    if (localStorage.getItem(KEY)) return;
+    const stored = localStorage.getItem(KEY);
+
+    // If user has previously chosen, apply their choice immediately
+    if (stored === 'accepted' && typeof gtag === 'function') {
+      gtag('consent', 'update', {
+        'ad_storage': 'granted',
+        'ad_user_data': 'granted',
+        'ad_personalization': 'granted',
+        'analytics_storage': 'granted'
+      });
+      return;
+    }
+    if (stored === 'essential-only') {
+      // Keep ads denied, but allow anonymous analytics
+      if (typeof gtag === 'function') {
+        gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      }
+      return;
+    }
+
     const banner = document.createElement('div');
     banner.className = 'cookie-banner';
     banner.setAttribute('role', 'dialog');
     banner.setAttribute('aria-label', 'Cookie consent');
     banner.innerHTML = `
-      <p>We use essential cookies and anonymous analytics to improve this site.
+      <p>We use cookies for essential site functionality, anonymous analytics, and advertising.
       See our <a href="privacy.html">Privacy Policy</a> for details.</p>
       <div class="actions">
         <button class="cookie-decline" type="button">Essential only</button>
@@ -150,6 +272,18 @@
       banner.classList.remove('visible');
       banner.classList.add('dismissed');
       setTimeout(() => banner.remove(), 500);
+
+      if (typeof gtag !== 'function') return;
+      if (choice === 'accepted') {
+        gtag('consent', 'update', {
+          'ad_storage': 'granted',
+          'ad_user_data': 'granted',
+          'ad_personalization': 'granted',
+          'analytics_storage': 'granted'
+        });
+      } else {
+        gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      }
     };
     banner.querySelector('.cookie-accept').addEventListener('click', () => dismiss('accepted'));
     banner.querySelector('.cookie-decline').addEventListener('click', () => dismiss('essential-only'));
