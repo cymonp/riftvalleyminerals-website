@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google tag (gtag.js) — Google Ads + Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'wait_for_update': 500
+  });
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX', { 'anonymize_ip': true });
+  gtag('config', 'AW-XXXXXXXXX');
+</script>
+<title>Visitor Insights — Rift Valley Minerals</title>
+<meta name="description" content="Live visitor dashboard for Rift Valley Minerals. See current visitor location, device, browser, operating system, and site-wide visit counters.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://riftvalleyminerals.com/visitors.html">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<link rel="icon" type="image/png" href="assets/images/favicon.png">
+<link rel="apple-touch-icon" href="assets/images/logo.png">
+<!-- Mobile / PWA / Microsoft -->
+<link rel="manifest" href="manifest.json">
+<meta name="application-name" content="Rift Valley Minerals">
+<meta name="apple-mobile-web-app-title" content="Rift Valley">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=yes">
+<meta name="msapplication-TileColor" content="#0b1524">
+
+<!-- Performance hints -->
+<link rel="preconnect" href="https://ipapi.co" crossorigin>
+<link rel="dns-prefetch" href="https://ipapi.co">
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Visitor dashboard specific styling */
+  .viz-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin: 2rem 0;
+  }
+  .viz-card {
+    background: linear-gradient(145deg, #121c2e 0%, #0b1524 100%);
+    border: 1px solid rgba(201,162,39,0.25);
+    border-radius: 14px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .viz-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(201,162,39,0.6);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+  .viz-card::before {
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, #c9a227 0%, #f5d76e 50%, #c9a227 100%);
+  }
+  .viz-card .viz-label {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    color: #c9a227;
+    font-weight: 700;
+    margin-bottom: .6rem;
+    display:flex; align-items:center; gap:.5rem;
+  }
+  .viz-card .viz-label .dot {
+    width:8px; height:8px; border-radius:50%;
+    background:#22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,0.7);
+    animation: pulse-live 2s infinite;
+  }
+  @keyframes pulse-live {
+    0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+  }
+  .viz-card .viz-value {
+    font-size: 1.5rem;
+    color: #fff;
+    font-weight: 600;
+    line-height:1.25;
+    word-break: break-word;
+  }
+  .viz-card .viz-sub {
+    font-size: .85rem;
+    color:#a8b2c1;
+    margin-top:.35rem;
+  }
+  .viz-big {
+    font-family: Georgia, serif;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    color:#f5d76e;
+    font-weight: 700;
+    line-height:1;
+  }
+  .viz-table {
+    width:100%;
+    border-collapse: collapse;
+    background:#0e182a;
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid rgba(201,162,39,0.2);
+  }
+  .viz-table th, .viz-table td {
+    padding: .9rem 1rem;
+    text-align:left;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color:#e6ecf5;
+    font-size:.95rem;
+  }
+  .viz-table th {
+    background:#0b1524;
+    color:#c9a227;
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    font-weight:700;
+  }
+  .viz-table tr:last-child td { border-bottom:none; }
+  .viz-table tr:hover td { background: rgba(201,162,39,0.05); }
+  .viz-hero {
+    background: radial-gradient(ellipse at top, #1a2842 0%, #0b1524 60%);
+    padding: 4rem 0 2.5rem;
+    position:relative;
+    overflow:hidden;
+  }
+  .viz-hero::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(201,162,39,0.08) 0%, transparent 30%),
+      radial-gradient(circle at 90% 70%, rgba(201,162,39,0.1) 0%, transparent 35%);
+    pointer-events:none;
+  }
+  .live-badge {
+    display:inline-flex; align-items:center; gap:.5rem;
+    background: rgba(34,197,94,0.12);
+    border:1px solid rgba(34,197,94,0.35);
+    color:#4ade80;
+    font-size:.8rem; font-weight:600;
+    padding:.35rem .9rem;
+    border-radius:999px;
+    margin-bottom:1rem;
+    letter-spacing:.05em;
+  }
+  .live-badge .dot {
+    width:8px; height:8px; border-radius:50%;
+    background:#22c55e;
+    animation: pulse-live 2s infinite;
+  }
+  .map-frame {
+    width:100%; aspect-ratio: 16/9;
+    border:1px solid rgba(201,162,39,0.25);
+    border-radius:14px;
+    background:#0e182a;
+  }
+  .viz-note {
+    background: #0e182a;
+    border-left: 3px solid #c9a227;
+    padding:1.25rem 1.5rem;
+    border-radius:8px;
+    margin: 2rem 0;
+    color:#a8b2c1;
+    font-size:.92rem;
+    line-height:1.6;
+  }
+  .viz-note strong { color:#f5d76e; }
+  .skeleton {
+    background: linear-gradient(90deg, #1a2438 0%, #2a3651 50%, #1a2438 100%);
+    background-size: 200% 100%;
+    animation: shimmer-load 1.4s infinite;
+    color: transparent !important;
+    border-radius:4px;
+  }
+  @keyframes shimmer-load {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .stat-row {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .stat-box {
+    background: linear-gradient(145deg, #0e182a 0%, #0b1524 100%);
+    border:1px solid rgba(201,162,39,0.2);
+    border-radius:12px;
+    padding:1.25rem;
+    text-align:center;
+  }
+  .stat-box .n {
+    font-family: Georgia, serif;
+    font-size: 2rem;
+    color: #f5d76e;
+    font-weight:700;
+    line-height:1;
+  }
+  .stat-box .l {
+    font-size:.75rem;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:#a8b2c1;
+    margin-top:.5rem;
+  }
+  .refresh-btn {
+    display:inline-flex; align-items:center; gap:.5rem;
+    background: transparent;
+    border:1px solid rgba(201,162,39,0.4);
+    color:#c9a227;
+    padding:.55rem 1.1rem;
+    border-radius:999px;
+    font-size:.82rem;
+    font-weight:600;
+    cursor:pointer;
+    transition: all .2s ease;
+    letter-spacing:.05em;
+  }
+  .refresh-btn:hover {
+    background: rgba(201,162,39,0.12);
+    color:#f5d76e;
+  }
+  .refresh-btn svg { width:14px; height:14px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="container">
+    <span>Licensed Gold Exporters · Kololo, Kampala, Uganda</span>
+    <span><a href="tel:+256700315881">+256 700 315 881</a> &nbsp;•&nbsp; <a href="mailto:trade@riftvalleyminerals.com">trade@riftvalleyminerals.com</a></span>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container nav-wrap">
+    <a href="index.html" class="brand">
+      <img class="logo-img" src="assets/images/logo.png" alt="Rift Valley Minerals">
+      <span>Rift Valley Minerals<small>Licensed Gold Exporters</small></span>
+    </a>
+    <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html">Home</a>
+      <a href="products.html">Products</a>
+      <a href="buy-gold.html">Buy Gold</a>
+      <a href="prices.html">Prices</a>
+      <a href="about.html">About</a>
+      <a href="compliance.html">Compliance</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contact.html" class="cta-btn">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<section class="viz-hero">
+  <div class="container">
+    <div class="live-badge"><span class="dot"></span> LIVE · Data refreshes on every page load</div>
+    <h1 style="color:#fff;margin:0 0 .5rem">Visitor Insights</h1>
+    <p style="color:#a8b2c1;max-width:680px;margin:0">
+      A live readout of the current visitor's geographic location, device, browser,
+      and operating system — plus cumulative counters for returning visitors and
+      a pointer to full aggregate analytics via Google Analytics 4.
+    </p>
+    <div style="margin-top:1.5rem">
+      <button class="refresh-btn" onclick="window.location.reload()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        Refresh now
+      </button>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+
+    <!-- Visit counter strip -->
+    <h2 style="margin-top:2.5rem">This Browser's Activity</h2>
+    <p style="color:var(--muted);margin-bottom:0">Counts stored locally in this browser via <code>localStorage</code>. They reset if the visitor clears site data.</p>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="n" id="s-visits">—</div>
+        <div class="l">Total Visits</div>
+      </div>
+      <div class="stat-box">
+        <div class="n" id="s-sessions">—</div>
+        <div class="l">Sessions</div>
+      </div>
+      <div class="stat-box">
+        <div class="n" id="s-pages">—</div>
+        <div class="l">Pages Viewed</div>
+      </div>
+      <div class="stat-box">
+        <div class="n" id="s-first">—</div>
+        <div class="l">First Seen</div>
+      </div>
+      <div class="stat-box">
+        <div class="n" id="s-last">—</div>
+        <div class="l">Last Seen</div>
+      </div>
+    </div>
+
+    <!-- Location block -->
+    <h2 style="margin-top:3rem">Location</h2>
+    <p style="color:var(--muted);margin-bottom:0">Resolved from the visitor's public IP via <a href="https://ipapi.co" target="_blank" rel="noopener" style="color:#c9a227">ipapi.co</a>. City-level accuracy.</p>
+    <div class="viz-grid">
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Country</div>
+        <div class="viz-value" id="g-country">Loading…</div>
+        <div class="viz-sub" id="g-country-code"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>City / Region</div>
+        <div class="viz-value" id="g-city">Loading…</div>
+        <div class="viz-sub" id="g-region"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>IP Address</div>
+        <div class="viz-value" id="g-ip">Loading…</div>
+        <div class="viz-sub" id="g-ipver"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>ISP / Network</div>
+        <div class="viz-value" id="g-org">Loading…</div>
+        <div class="viz-sub" id="g-asn"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Coordinates</div>
+        <div class="viz-value" id="g-coords">Loading…</div>
+        <div class="viz-sub" id="g-timezone"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Currency</div>
+        <div class="viz-value" id="g-currency">Loading…</div>
+        <div class="viz-sub" id="g-calling"></div>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div style="margin:1.5rem 0 3rem">
+      <iframe id="g-map" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Visitor approximate location"></iframe>
+    </div>
+
+    <!-- Device block -->
+    <h2>Device & Machine</h2>
+    <p style="color:var(--muted);margin-bottom:0">Resolved client-side from the browser's User-Agent and environment APIs.</p>
+    <div class="viz-grid">
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Device Type</div>
+        <div class="viz-value" id="d-type">—</div>
+        <div class="viz-sub" id="d-touch"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Operating System</div>
+        <div class="viz-value" id="d-os">—</div>
+        <div class="viz-sub" id="d-osver"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Browser</div>
+        <div class="viz-value" id="d-browser">—</div>
+        <div class="viz-sub" id="d-bver"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Screen Resolution</div>
+        <div class="viz-value" id="d-screen">—</div>
+        <div class="viz-sub" id="d-viewport"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>CPU Cores</div>
+        <div class="viz-value" id="d-cpu">—</div>
+        <div class="viz-sub" id="d-mem"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Language</div>
+        <div class="viz-value" id="d-lang">—</div>
+        <div class="viz-sub" id="d-langs"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Connection</div>
+        <div class="viz-value" id="d-conn">—</div>
+        <div class="viz-sub" id="d-downlink"></div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-label"><span class="dot"></span>Color Depth</div>
+        <div class="viz-value" id="d-color">—</div>
+        <div class="viz-sub" id="d-pixel"></div>
+      </div>
+    </div>
+
+    <!-- Full technical readout -->
+    <h2 style="margin-top:3rem">Technical Readout</h2>
+    <p style="color:var(--muted);margin-bottom:1rem">Complete environment snapshot.</p>
+    <table class="viz-table">
+      <thead>
+        <tr><th style="width:38%">Property</th><th>Value</th></tr>
+      </thead>
+      <tbody id="tech-readout">
+        <tr><td colspan="2" style="color:#7a8597;text-align:center">Loading…</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Aggregate analytics note -->
+    <div class="viz-note">
+      <strong>Site-wide visitor totals (across all devices)</strong><br>
+      This page shows <em>the current visitor's</em> information plus a
+      locally-stored counter for this browser only. Aggregate statistics for
+      every visitor worldwide — total users, country breakdown, device mix,
+      traffic sources, page-level engagement — are collected by the
+      Google Analytics 4 tag already installed on every page. To view that data,
+      sign in to the <a href="https://analytics.google.com" target="_blank" rel="noopener" style="color:#c9a227">Google Analytics dashboard</a>
+      with the property owner's account. Swap the placeholder
+      <code>G-XXXXXXXXXX</code> Measurement ID in each HTML file for your real
+      GA4 property to activate data collection.
+    </div>
+
+    <div class="viz-note" style="border-left-color:#4ade80">
+      <strong>Privacy notice</strong><br>
+      Location is derived from the visitor's public IP address (city-level accuracy)
+      via the free ipapi.co service. No precise GPS location is requested. No
+      personally identifiable information is stored server-side. The local
+      counter is stored only in the visitor's own browser and is never
+      transmitted anywhere.
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand">
+          <img class="logo-img" src="assets/images/logo.png" alt="Rift Valley Minerals">
+          <span>Rift Valley Minerals<small style="color:#6b7689">Licensed Gold Exporters</small></span>
+        </a>
+        <p style="color:#a8b2c1;margin-top:.8rem">A Uganda-licensed gold exporter supplying responsibly sourced gold to international refiners and professional bullion traders.</p>
+      </div>
+      <div>
+        <h4>Products</h4>
+        <ul>
+          <li><a href="products.html">Dore Bars</a></li>
+          <li><a href="products.html">Refined Bars</a></li>
+          <li><a href="products.html">Kilobars</a></li>
+          <li><a href="prices.html">Live Pricing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="compliance.html">Compliance</a></li>
+          <li><a href="buy-gold.html">Buying Process</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms &amp; Conditions</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>East Africa HQ</h4>
+        <ul>
+          <li>Kololo, Plot 8, 5th Street</li>
+          <li>Kampala, Uganda</li>
+          <li><a href="tel:+256700315881">+256 700 315 881</a></li>
+          <li><a href="mailto:trade@riftvalleyminerals.com">trade@riftvalleyminerals.com</a></li>
+          <li>Mon–Fri, 08:00–17:00 EAT</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="yr"></span> Rift Valley Minerals Ltd. All rights reserved.</span>
+      <span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="compliance.html">Compliance</a> · <a href="contact.html">Contact</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+<script src="script.js"></script>
+<script>
+/* ============================================================
+   VISITOR DASHBOARD — client-side only, no backend required
+   ============================================================ */
+(function(){
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const setText = (id, v) => { const el = $(id); if (el) el.textContent = (v ?? '—'); };
+
+  /* ---------- 1. Local visit counter ---------- */
+  try {
+    const KEY = 'rvm_visits_v1';
+    const raw = localStorage.getItem(KEY);
+    const now = new Date();
+    let data = raw ? JSON.parse(raw) : { visits:0, sessions:0, pages:0, first:now.toISOString(), last:now.toISOString(), sessionId:null, sessionStart:null };
+
+    // A "session" = new visit if last activity was > 30 min ago
+    const lastSeen = new Date(data.last);
+    const minsSince = (now - lastSeen) / 60000;
+    const isNewSession = !data.sessionId || minsSince > 30;
+
+    data.visits = (data.visits || 0) + 1;      // every page load counts as visit
+    data.pages  = (data.pages  || 0) + 1;
+    if (isNewSession) {
+      data.sessions = (data.sessions || 0) + 1;
+      data.sessionId = now.getTime().toString(36);
+      data.sessionStart = now.toISOString();
+    }
+    data.last = now.toISOString();
+    if (!data.first) data.first = now.toISOString();
+    localStorage.setItem(KEY, JSON.stringify(data));
+
+    const fmt = iso => {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric'});
+    };
+    setText('s-visits',   data.visits.toLocaleString());
+    setText('s-sessions', data.sessions.toLocaleString());
+    setText('s-pages',    data.pages.toLocaleString());
+    setText('s-first',    fmt(data.first));
+    setText('s-last',     fmt(data.last));
+  } catch(e){ console.warn('Counter failed', e); }
+
+  /* ---------- 2. Device / browser / OS detection ---------- */
+  const ua = navigator.userAgent || '';
+  const uaData = navigator.userAgentData || null;
+
+  // OS detection
+  function detectOS(){
+    if (uaData?.platform) return { name: uaData.platform, version: '' };
+    const tests = [
+      [/Windows NT 10/i,  'Windows', '10/11'],
+      [/Windows NT 6\.3/i,'Windows', '8.1'],
+      [/Windows NT 6\.2/i,'Windows', '8'],
+      [/Windows NT 6\.1/i,'Windows', '7'],
+      [/Windows/i,        'Windows', ''],
+      [/iPad|iPhone|iPod/i, 'iOS',  (ua.match(/OS (\d+[_\.]\d+)/) || [,''])[1].replace('_','.')],
+      [/Android/i,        'Android', (ua.match(/Android (\d+(?:\.\d+)?)/) || [,''])[1]],
+      [/Mac OS X (\d+[_\.]\d+)/i, 'macOS', (ua.match(/Mac OS X (\d+[_\.]\d+)/) || [,''])[1].replace('_','.')],
+      [/Macintosh/i,      'macOS', ''],
+      [/CrOS/i,           'ChromeOS', ''],
+      [/Linux/i,          'Linux', ''],
+    ];
+    for (const [re, name, ver] of tests) if (re.test(ua)) return { name, version: ver };
+    return { name: 'Unknown', version: '' };
+  }
+
+  // Browser detection
+  function detectBrowser(){
+    const brands = uaData?.brands?.filter(b => !/Not.A.Brand|Chromium/i.test(b.brand));
+    if (brands?.length) return { name: brands[0].brand, version: brands[0].version };
+    const tests = [
+      [/Edg\/(\d+(?:\.\d+)?)/,     'Microsoft Edge'],
+      [/OPR\/(\d+(?:\.\d+)?)/,     'Opera'],
+      [/Chrome\/(\d+(?:\.\d+)?)/,  'Chrome'],
+      [/Firefox\/(\d+(?:\.\d+)?)/, 'Firefox'],
+      [/Version\/(\d+(?:\.\d+)?).*Safari/, 'Safari'],
+      [/MSIE (\d+(?:\.\d+)?)/,     'Internet Explorer'],
+      [/Trident.*rv:(\d+(?:\.\d+)?)/, 'Internet Explorer'],
+    ];
+    for (const [re, name] of tests){ const m = ua.match(re); if (m) return { name, version: m[1] }; }
+    return { name:'Unknown', version:'' };
+  }
+
+  // Device type
+  function detectDevice(){
+    if (uaData?.mobile) return 'Mobile';
+    if (/iPad|Tablet|PlayBook|Silk/i.test(ua) || (navigator.maxTouchPoints > 2 && /Macintosh/i.test(ua))) return 'Tablet';
+    if (/Mobile|Android|iPhone|iPod|BlackBerry|Windows Phone/i.test(ua)) return 'Mobile';
+    return 'Desktop';
+  }
+
+  const os = detectOS();
+  const br = detectBrowser();
+  const devType = detectDevice();
+
+  setText('d-type', devType);
+  setText('d-touch', navigator.maxTouchPoints > 0 ? `Touch (${navigator.maxTouchPoints} points)` : 'No touch input');
+  setText('d-os', os.name);
+  setText('d-osver', os.version ? `Version ${os.version}` : '');
+  setText('d-browser', br.name);
+  setText('d-bver', br.version ? `Version ${br.version}` : '');
+  setText('d-screen', `${screen.width} × ${screen.height}`);
+  setText('d-viewport', `Viewport ${window.innerWidth} × ${window.innerHeight}`);
+  setText('d-cpu', (navigator.hardwareConcurrency || '—') + ' cores');
+  setText('d-mem', navigator.deviceMemory ? `${navigator.deviceMemory} GB RAM (approx)` : 'Memory info restricted');
+  setText('d-lang', navigator.language || '—');
+  setText('d-langs', (navigator.languages || []).slice(0,4).join(', '));
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  setText('d-conn', conn?.effectiveType ? conn.effectiveType.toUpperCase() : 'Unavailable');
+  setText('d-downlink', conn?.downlink ? `~${conn.downlink} Mbps · RTT ${conn.rtt || '?'} ms` : '');
+  setText('d-color', `${screen.colorDepth}-bit`);
+  setText('d-pixel', `DPR ${window.devicePixelRatio}`);
+
+  /* ---------- 3. Geolocation via ipapi.co ---------- */
+  (async function(){
+    try {
+      const res = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      if (d.error) throw new Error(d.reason || 'API error');
+
+      setText('g-country',      d.country_name || '—');
+      setText('g-country-code', d.country_code ? `ISO: ${d.country_code} · ${d.continent_code || ''}` : '');
+      setText('g-city',         d.city || '—');
+      setText('g-region',       [d.region, d.postal].filter(Boolean).join(' · ') || '');
+      setText('g-ip',           d.ip || '—');
+      setText('g-ipver',        d.version ? `${d.version}` : '');
+      setText('g-org',          d.org || '—');
+      setText('g-asn',          d.asn || '');
+      setText('g-coords',       (d.latitude && d.longitude) ? `${(+d.latitude).toFixed(3)}°, ${(+d.longitude).toFixed(3)}°` : '—');
+      setText('g-timezone',     [d.timezone, d.utc_offset].filter(Boolean).join(' · '));
+      setText('g-currency',     d.currency ? `${d.currency} (${d.currency_name || ''})` : '—');
+      setText('g-calling',      d.country_calling_code ? `Dial: ${d.country_calling_code} · ${d.languages || ''}` : '');
+
+      // Map: OpenStreetMap embed (no API key required)
+      if (d.latitude && d.longitude){
+        const lat = +d.latitude, lon = +d.longitude;
+        const bbox = [lon-1.5, lat-1.5, lon+1.5, lat+1.5].join(',');
+        $('g-map').src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+      }
+      buildReadout(d);
+    } catch(err){
+      console.warn('Geo lookup failed', err);
+      ['g-country','g-city','g-ip','g-org','g-coords','g-currency'].forEach(id => setText(id, 'Unavailable'));
+      setText('g-country-code', 'Ad/tracker blockers may prevent IP lookup');
+      buildReadout(null);
+    }
+  })();
+
+  /* ---------- 4. Full technical readout table ---------- */
+  function buildReadout(geo){
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const rows = [
+      ['User Agent', ua],
+      ['Platform', uaData?.platform || navigator.platform || '—'],
+      ['Device type', devType],
+      ['OS', `${os.name} ${os.version}`.trim()],
+      ['Browser', `${br.name} ${br.version}`.trim()],
+      ['Cookies enabled', navigator.cookieEnabled ? 'Yes' : 'No'],
+      ['Do Not Track', navigator.doNotTrack === '1' ? 'Enabled' : 'Not set'],
+      ['Online', navigator.onLine ? 'Yes' : 'No'],
+      ['Screen', `${screen.width} × ${screen.height} (available ${screen.availWidth} × ${screen.availHeight})`],
+      ['Viewport', `${window.innerWidth} × ${window.innerHeight}`],
+      ['Device pixel ratio', window.devicePixelRatio],
+      ['Color depth', `${screen.colorDepth}-bit`],
+      ['Primary language', navigator.language || '—'],
+      ['All languages', (navigator.languages || []).join(', ') || '—'],
+      ['System timezone (browser)', tz || '—'],
+      ['Local time', new Date().toLocaleString()],
+      ['CPU cores', navigator.hardwareConcurrency || '—'],
+      ['Device memory', navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Restricted'],
+      ['Max touch points', navigator.maxTouchPoints || 0],
+      ['Referrer', document.referrer || 'Direct visit'],
+      ['Page URL', location.href],
+    ];
+    if (geo){
+      rows.push(
+        ['Public IP', geo.ip || '—'],
+        ['IP version', geo.version || '—'],
+        ['Country', `${geo.country_name || '—'} (${geo.country_code || ''})`],
+        ['Region / State', geo.region || '—'],
+        ['City', geo.city || '—'],
+        ['Postal code', geo.postal || '—'],
+        ['Latitude', geo.latitude || '—'],
+        ['Longitude', geo.longitude || '—'],
+        ['IP timezone', geo.timezone || '—'],
+        ['UTC offset', geo.utc_offset || '—'],
+        ['ISP / Organisation', geo.org || '—'],
+        ['ASN', geo.asn || '—'],
+        ['Currency', `${geo.currency || '—'} (${geo.currency_name || ''})`],
+        ['Country calling code', geo.country_calling_code || '—'],
+        ['Country languages', geo.languages || '—'],
+      );
+    }
+    const tbody = $('tech-readout');
+    tbody.innerHTML = rows.map(([k,v]) =>
+      `<tr><td style="color:#c9a227;font-weight:600">${k}</td><td style="color:#e6ecf5;word-break:break-all">${String(v ?? '—')}</td></tr>`
+    ).join('');
+  }
+
+})();
+</script>
+</body>
+</html>
