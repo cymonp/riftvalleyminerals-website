@@ -288,4 +288,32 @@
     banner.querySelector('.cookie-accept').addEventListener('click', () => dismiss('accepted'));
     banner.querySelector('.cookie-decline').addEventListener('click', () => dismiss('essential-only'));
   })();
+
+  // ==========================================================================
+  // Visitor counter (localStorage) — excludes /visitors.html itself
+  // ==========================================================================
+  (function(){
+    try {
+      const currentPage = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+      if (currentPage === 'visitors.html') return;   // don't count dashboard views
+
+      const KEY  = 'rvm_visits_v1';
+      const now  = new Date();
+      const raw  = localStorage.getItem(KEY);
+      const data = raw ? JSON.parse(raw)
+                       : { visits:0, sessions:0, first:now.toISOString(), last:now.toISOString(), sessionId:null };
+
+      // A "session" = new visit if last activity was > 30 min ago
+      const minsSince = (now - new Date(data.last)) / 60000;
+      if (!data.sessionId || minsSince > 30) {
+        data.sessions  = (data.sessions || 0) + 1;
+        data.sessionId = now.getTime().toString(36);
+      }
+      data.visits = (data.visits || 0) + 1;
+      data.last   = now.toISOString();
+      if (!data.first) data.first = now.toISOString();
+      localStorage.setItem(KEY, JSON.stringify(data));
+    } catch(e) { /* localStorage disabled — silent skip */ }
+  })();
+
 })();
