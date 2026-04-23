@@ -290,13 +290,20 @@
   })();
 
   // ==========================================================================
-  // Visitor counter (localStorage) — excludes /visitors.html itself
+  // Visitor logging — excludes /visitors.html itself
+  //
+  // (A) localStorage counter for "this browser's history" on the dashboard
+  // (B) Cloudflare Worker /log endpoint — one row per unique IP, server-side
+  //
+  // To enable (B), deploy api/worker.js (see api/README.md) and set
+  // window.RVM_API_BASE in each HTML page, OR replace the placeholder below.
   // ==========================================================================
   (function(){
-    try {
-      const currentPage = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-      if (currentPage === 'visitors.html') return;   // don't count dashboard views
+    const currentPage = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    if (currentPage === 'visitors.html') return;   // don't count dashboard views
 
+    /* ---- (A) localStorage ---- */
+    try {
       const KEY  = 'rvm_visits_v1';
       const now  = new Date();
       const raw  = localStorage.getItem(KEY);
@@ -314,6 +321,69 @@
       if (!data.first) data.first = now.toISOString();
       localStorage.setItem(KEY, JSON.stringify(data));
     } catch(e) { /* localStorage disabled — silent skip */ }
+
+    /* ---- (B) Server-side log: one row per unique IP ----
+       Set window.RVM_API_BASE on the page (or edit the line below) to your
+       deployed Worker URL, e.g. "https://rvm-visitor-log.yourname.workers.dev"
+       or "https://riftvalleyminerals.com/api". Leave empty to disable. */
+    const API_BASE = window.RVM_API_BASE || ''; // e.g. 'https://rvm-visitor-log.xxxx.workers.dev'
+    if (!API_BASE) return;
+
+    try {
+      const ua = navigator.userAgent || '';
+      const uaData = navigator.userAgentData || null;
+
+      const detectOS = () => {
+        if (uaData?.platform) return uaData.platform;
+        if (/Windows NT 10/i.test(ua)) return 'Windows 10/11';
+        if (/Windows/i.test(ua))       return 'Windows';
+        if (/iPad|iPhone|iPod/i.test(ua)) return 'iOS';
+        if (/Android/i.test(ua))       return 'Android';
+        if (/Mac OS X/i.test(ua))      return 'macOS';
+        if (/CrOS/i.test(ua))          return 'ChromeOS';
+        if (/Linux/i.test(ua))         return 'Linux';
+        return 'Unknown';
+      };
+      const detectBrowser = () => {
+        const brands = uaData?.brands?.filter(b => !/Not.A.Brand|Chromium/i.test(b.brand));
+        if (brands?.length) return `${brands[0].brand} ${brands[0].version}`;
+        let m;
+        if ((m = ua.match(/Edg\/(\d+)/)))     return 'Edge ' + m[1];
+        if ((m = ua.match(/OPR\/(\d+)/)))     return 'Opera ' + m[1];
+        if ((m = ua.match(/Firefox\/(\d+)/))) return 'Firefox ' + m[1];
+        if ((m = ua.match(/Chrome\/(\d+)/)))  return 'Chrome ' + m[1];
+        if ((m = ua.match(/Version\/(\d+).*Safari/))) return 'Safari ' + m[1];
+        return 'Unknown';
+      };
+      const detectDevice = () => {
+        if (uaData?.mobile) return 'Mobile';
+        if (/iPad|Tablet/i.test(ua)) return 'Tablet';
+        if (/Mobile|Android|iPhone/i.test(ua)) return 'Mobile';
+        return 'Desktop';
+      };
+
+      const payload = {
+        page:     currentPage,
+        ua:       ua,
+        os:       detectOS(),
+        browser:  detectBrowser(),
+        device:   detectDevice(),
+        screen:   `${screen.width}x${screen.height}`,
+        lang:     (navigator.language || '').toUpperCase(),
+        tz:       (Intl.DateTimeFormat().resolvedOptions().timeZone) || '',
+        referrer: document.referrer || ''
+      };
+
+      // Fire-and-forget. Use sendBeacon when available so it survives page-unload.
+      const body = JSON.stringify(payload);
+      const url  = API_BASE.replace(/\/+$/, '') + '/log';
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+      } else {
+        fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body, keepalive:true })
+          .catch(() => { /* silent */ });
+      }
+    } catch(e) { /* network/API disabled — silent */ }
   })();
 
 })();

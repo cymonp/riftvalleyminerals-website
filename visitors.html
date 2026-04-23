@@ -164,6 +164,91 @@
     margin-top:1rem;
   }
   .refresh-btn:hover { background: rgba(201,162,39,0.12); color:#f5d76e; }
+
+  /* Aggregate-table styles */
+  .totals-row {
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:.75rem;
+    margin:1.25rem 0 1.5rem;
+  }
+  @media (max-width:640px){ .totals-row { grid-template-columns: repeat(2, 1fr); } }
+  .tot {
+    background: linear-gradient(145deg, #121c2e 0%, #0b1524 100%);
+    border:1px solid rgba(201,162,39,0.25);
+    border-radius:10px;
+    padding:1rem .8rem;
+    text-align:center;
+    position:relative; overflow:hidden;
+  }
+  .tot::before {
+    content:""; position:absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg,#c9a227,#f5d76e,#c9a227);
+  }
+  .tot .n {
+    font-family: Georgia, serif;
+    font-size: 1.9rem;
+    color:#f5d76e;
+    font-weight:700; line-height:1;
+  }
+  .tot .l {
+    font-size:.68rem;
+    text-transform:uppercase; letter-spacing:.12em;
+    color:#8794a8; margin-top:.45rem;
+  }
+  .visitors-table-wrap { overflow-x:auto; margin:1.25rem 0; }
+  .visitors-table {
+    width:100%;
+    border-collapse:collapse;
+    background:#0e182a;
+    border:1px solid rgba(201,162,39,0.2);
+    border-radius:12px;
+    overflow:hidden;
+    font-size:.87rem;
+    min-width: 900px;
+  }
+  .visitors-table th, .visitors-table td {
+    padding:.7rem .85rem;
+    text-align:left;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    color:#e6ecf5;
+  }
+  .visitors-table th {
+    background:#0b1524;
+    color:#c9a227;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    font-weight:700;
+    position:sticky; top:0;
+  }
+  .visitors-table tr:last-child td { border-bottom:none; }
+  .visitors-table tr:hover td { background: rgba(201,162,39,0.05); }
+  .visitors-table td.ip { font-family: ui-monospace,Menlo,monospace; color:#c9a227; }
+  .visitors-table td.visits { text-align:right; font-weight:700; color:#f5d76e; }
+  .chip {
+    display:inline-block; background:rgba(201,162,39,0.12);
+    border:1px solid rgba(201,162,39,0.3); color:#f5d76e;
+    padding:.1rem .5rem; border-radius:999px; font-size:.72rem;
+    margin:.15rem .2rem .15rem 0;
+  }
+  .country-list {
+    display:flex; flex-wrap:wrap; gap:.4rem;
+    margin:.8rem 0 0;
+  }
+  .setup-alert {
+    background: rgba(234, 179, 8, 0.08);
+    border:1px solid rgba(234,179,8,0.35);
+    border-left:4px solid #eab308;
+    border-radius:8px;
+    padding:1rem 1.25rem;
+    margin:1.5rem 0;
+    color:#fde68a;
+    font-size:.9rem;
+    line-height:1.55;
+  }
+  .setup-alert strong { color:#fef3c7; }
+  .setup-alert code { background: rgba(0,0,0,0.25); padding:.1rem .35rem; border-radius:3px; }
 </style>
 </head>
 <body>
@@ -210,7 +295,63 @@
 <section>
   <div class="container">
 
-    <!-- Two-column summary: Location + Device -->
+    <!-- ===== ALL VISITORS — one row per unique IP (from Cloudflare Worker) ===== -->
+    <h2 style="margin-top:.25rem">All Visitors · One Row Per Unique IP</h2>
+    <p style="color:var(--muted);margin:.25rem 0 0">
+      Live data from the server-side log. Each row is a unique visitor IP
+      (anonymised to <code>prefix.*</code>). Raw IPs are SHA-256 hashed and
+      never stored.
+    </p>
+
+    <div id="setup-alert" class="setup-alert" style="display:none">
+      <strong>⚙️ Server-side log not yet connected.</strong>
+      The unique-IP table below needs a tiny Cloudflare Worker (free tier, ~5 min setup).
+      See <code>api/README.md</code> for deployment steps, then set
+      <code>window.RVM_API_BASE</code> in your HTML pages to the deployed Worker URL.
+      Until then, the counters show data from the current browser only.
+    </div>
+
+    <div class="totals-row">
+      <div class="tot"><div class="n" id="t-unique">—</div><div class="l">Unique Visitors</div></div>
+      <div class="tot"><div class="n" id="t-visits">—</div><div class="l">Total Visits</div></div>
+      <div class="tot"><div class="n" id="t-countries">—</div><div class="l">Countries</div></div>
+      <div class="tot"><div class="n" id="t-devices">—</div><div class="l">Device Types</div></div>
+    </div>
+
+    <div id="country-chips-wrap" style="display:none">
+      <strong style="color:#c9a227;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase">Top Countries</strong>
+      <div class="country-list" id="country-chips"></div>
+    </div>
+
+    <div class="visitors-table-wrap">
+      <table class="visitors-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>IP Prefix</th>
+            <th>Country</th>
+            <th>City / Region</th>
+            <th>ISP / Network</th>
+            <th>OS</th>
+            <th>Browser</th>
+            <th>Device</th>
+            <th>Last Page</th>
+            <th>First Seen</th>
+            <th>Last Seen</th>
+            <th style="text-align:right">Visits</th>
+          </tr>
+        </thead>
+        <tbody id="visitors-rows">
+          <tr><td colspan="12" style="color:#7a8597;text-align:center;padding:2rem">Loading visitor log…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ===== Your current visit (client-side) ===== -->
+    <h2 style="margin-top:3rem">Your Current Visit</h2>
+    <p style="color:var(--muted);margin:.25rem 0 0">
+      Detected live from the browser that's looking at this dashboard right now.
+    </p>
     <div class="summary-grid">
       <div class="sum-card">
         <h3>📍 Location</h3>
@@ -233,7 +374,7 @@
     <!-- Map -->
     <iframe id="g-map" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Visitor location"></iframe>
 
-    <!-- Visit counters -->
+    <!-- This browser's own local counter -->
     <div class="sum-card">
       <h3>📊 This Browser's Visit History</h3>
       <p style="color:#8794a8;font-size:.85rem;margin:0 0 .5rem">
@@ -258,9 +399,12 @@
     </div>
 
     <div class="viz-note" style="border-left-color:#4ade80">
-      <strong>Privacy:</strong> Location is city-level, derived from public IP via free
-      services (ipwho.is → geojs.io → freeipapi.com → ipapi.co, first available wins).
-      No GPS prompt, no PII stored server-side. The local counter lives only in the visitor's own browser.
+      <strong>Privacy:</strong> Raw IPs are <b>never</b> stored. Each visitor's IP
+      is SHA-256 hashed with a secret salt on the Cloudflare Worker edge, and
+      only an anonymised prefix (<code>41.220.24.*</code>) is ever returned to
+      this dashboard. Country / city / ISP come directly from Cloudflare's edge
+      without calling any third-party API. No GPS prompt. Bots and crawlers are
+      filtered out before logging.
     </div>
 
   </div>
@@ -319,12 +463,90 @@
 <script src="script.js"></script>
 <script>
 /* ============================================================
-   VISITOR DASHBOARD — summarised, excludes /visitors.html hits
-   ============================================================ */
+   VISITOR DASHBOARD
+   - Pulls aggregated "1 row per unique IP" from Cloudflare Worker
+   - Falls back to client-side lookup for the "your visit" card
+   - Does NOT increment any counter when this dashboard is viewed
+   ============================================================
+
+   HOW TO CONNECT THE SERVER-SIDE LOG:
+   Deploy api/worker.js to Cloudflare (see api/README.md), then
+   replace the placeholder below with your deployed URL. */
+const API_BASE = window.RVM_API_BASE || ''; // e.g. 'https://rvm-visitor-log.yourname.workers.dev'
+
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
   const setText = (id, v) => { const el = $(id); if (el) el.textContent = (v ?? '—'); };
+
+  /* ---------- 0. Fetch aggregated unique-IP table from Worker ---------- */
+  (async function loadAggregate(){
+    if (!API_BASE){
+      $('setup-alert').style.display = 'block';
+      $('visitors-rows').innerHTML = '<tr><td colspan="12" style="text-align:center;color:#7a8597;padding:2rem">' +
+        'Configure <code>window.RVM_API_BASE</code> in this page to display the server-side visitor log. See <code>api/README.md</code>.</td></tr>';
+      setText('t-unique', '0'); setText('t-visits','0'); setText('t-countries','0'); setText('t-devices','0');
+      return;
+    }
+    try {
+      const res  = await fetch(API_BASE.replace(/\/+$/,'') + '/list', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      setText('t-unique',    (data.uniqueVisitors || 0).toLocaleString());
+      setText('t-visits',    (data.totalVisits   || 0).toLocaleString());
+      setText('t-countries', Object.keys(data.countries || {}).length);
+      setText('t-devices',   Object.keys(data.devices   || {}).length);
+
+      // Country chips
+      const chipsWrap = $('country-chips');
+      const entries = Object.entries(data.countries || {}).sort((a,b) => b[1]-a[1]);
+      if (entries.length){
+        chipsWrap.innerHTML = entries.map(([k,v]) => `<span class="chip">${escapeHtml(k)} · ${v}</span>`).join('');
+        $('country-chips-wrap').style.display = '';
+      }
+
+      // Table rows — one per unique IP
+      const rows = data.rows || [];
+      if (!rows.length){
+        $('visitors-rows').innerHTML =
+          '<tr><td colspan="12" style="text-align:center;color:#7a8597;padding:2rem">No visitors logged yet. Visit any other page on the site to generate the first row.</td></tr>';
+        return;
+      }
+      const fmtDate = iso => {
+        const d = new Date(iso);
+        return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) +
+               ' ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      };
+      $('visitors-rows').innerHTML = rows.map((r, i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td class="ip" title="${escapeHtml(r.ipHash || '')}">${escapeHtml(r.ipPrefix || '—')}</td>
+          <td>${escapeHtml(r.countryName || r.country || '—')}${r.country && r.countryName ? ` <span style="color:#8794a8">(${escapeHtml(r.country)})</span>` : ''}</td>
+          <td>${escapeHtml([r.city, r.region].filter(Boolean).join(', ') || '—')}</td>
+          <td>${escapeHtml(r.asOrg || '—')}</td>
+          <td>${escapeHtml(r.os || '—')}</td>
+          <td>${escapeHtml(r.browser || '—')}</td>
+          <td>${escapeHtml(r.device || '—')}</td>
+          <td>${escapeHtml(r.lastPage || '—')}</td>
+          <td>${fmtDate(r.first)}</td>
+          <td>${fmtDate(r.last)}</td>
+          <td class="visits">${(r.visits || 0).toLocaleString()}</td>
+        </tr>
+      `).join('');
+    } catch(err){
+      console.warn('Visitor log fetch failed', err);
+      $('setup-alert').style.display = 'block';
+      $('setup-alert').innerHTML = '<strong>⚠️ Could not reach the visitor-log API.</strong> ' +
+        'Check that the Cloudflare Worker at <code>' + escapeHtml(API_BASE) + '</code> is deployed and the URL is correct. Error: ' + escapeHtml(err.message);
+      $('visitors-rows').innerHTML = '<tr><td colspan="12" style="text-align:center;color:#ef4444;padding:2rem">API request failed — see alert above.</td></tr>';
+      setText('t-unique','0'); setText('t-visits','0'); setText('t-countries','0'); setText('t-devices','0');
+    }
+  })();
+
+  function escapeHtml(s){
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
 
   /* ---------- 1. Local visit counter — READ ONLY on this page ---------- */
   /* The counter is incremented by script.js on every OTHER page.
