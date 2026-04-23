@@ -33,7 +33,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="msapplication-TileColor" content="#0b1524">
 
-<link rel="preconnect" href="https://ipapi.co" crossorigin>
+<link rel="preconnect" href="https://ipwho.is" crossorigin>
+<link rel="dns-prefetch" href="https://ipwho.is">
+<link rel="dns-prefetch" href="https://get.geojs.io">
+<link rel="dns-prefetch" href="https://freeipapi.com">
 <link rel="dns-prefetch" href="https://ipapi.co">
 
 <link rel="stylesheet" href="styles.css">
@@ -255,8 +258,8 @@
     </div>
 
     <div class="viz-note" style="border-left-color:#4ade80">
-      <strong>Privacy:</strong> Location is city-level, derived from public IP via
-      <a href="https://ipapi.co" target="_blank" rel="noopener" style="color:#c9a227">ipapi.co</a>.
+      <strong>Privacy:</strong> Location is city-level, derived from public IP via free
+      services (ipwho.is → geojs.io → freeipapi.com → ipapi.co, first available wins).
       No GPS prompt, no PII stored server-side. The local counter lives only in the visitor's own browser.
     </div>
 
@@ -381,27 +384,88 @@
   setText('d-screen',  `${screen.width}×${screen.height}`);
   setText('d-lang',    (navigator.language || '').toUpperCase());
 
-  /* ---------- 3. Geolocation via ipapi.co ---------- */
+  /* ---------- 3. Geolocation — tries multiple providers in sequence ----------
+     Why: each free provider can be blocked by ad-blockers, rate-limited,
+     or firewalled. If one fails we fall through to the next.
+     Each adapter normalises its provider's shape to a common schema. */
   (async function(){
-    try {
-      const res = await fetch('https://ipapi.co/json/', { cache:'no-store' });
-      const d   = await res.json();
-      if (d.error) throw new Error(d.reason || 'API error');
-
-      setText('g-country', `${d.country_name || '—'} (${d.country_code || ''})`);
-      setText('g-city',    [d.city, d.region].filter(Boolean).join(', ') || '—');
-      setText('g-ip',      d.ip || '—');
-      setText('g-org',     d.org || '—');
-      setText('g-tz',      d.timezone || '—');
-
-      if (d.latitude && d.longitude){
-        const lat = +d.latitude, lon = +d.longitude;
-        const bbox = [lon-1.5, lat-1.5, lon+1.5, lat+1.5].join(',');
-        $('g-map').src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+    const providers = [
+      { name:'ipwho.is', url:'https://ipwho.is/',
+        map: d => d.success === false ? null : ({
+          ip:d.ip, country:d.country, cc:d.country_code,
+          city:d.city, region:d.region, org:d.connection?.isp,
+          tz:d.timezone?.id, lat:d.latitude, lon:d.longitude
+        })
+      },
+      { name:'geojs.io', url:'https://get.geojs.io/v1/ip/geo.json',
+        map: d => ({
+          ip:d.ip, country:d.country, cc:d.country_code,
+          city:d.city, region:d.region, org:d.organization_name || d.organization,
+          tz:d.timezone, lat:parseFloat(d.latitude), lon:parseFloat(d.longitude)
+        })
+      },
+      { name:'freeipapi.com', url:'https://freeipapi.com/api/json/',
+        map: d => ({
+          ip:d.ipAddress, country:d.countryName, cc:d.countryCode,
+          city:d.cityName, region:d.regionName, org:null,
+          tz:d.timeZone, lat:d.latitude, lon:d.longitude
+        })
+      },
+      { name:'ipapi.co', url:'https://ipapi.co/json/',
+        map: d => d.error ? null : ({
+          ip:d.ip, country:d.country_name, cc:d.country_code,
+          city:d.city, region:d.region, org:d.org,
+          tz:d.timezone, lat:d.latitude, lon:d.longitude
+        })
       }
-    } catch(err){
-      ['g-country','g-city','g-ip','g-org','g-tz'].forEach(id => setText(id, 'Unavailable'));
+    ];
+
+    const errors = [];
+    for (const p of providers){
+      try {
+        const res = await fetch(p.url, { cache:'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        const d = p.map(json);
+        if (!d || !d.ip) throw new Error('Empty response');
+
+        setText('g-country', `${d.country || '—'}${d.cc ? ' (' + d.cc + ')' : ''}`);
+        setText('g-city',    [d.city, d.region].filter(Boolean).join(', ') || '—');
+        setText('g-ip',      d.ip);
+        setText('g-org',     d.org || '—');
+        setText('g-tz',      d.tz  || '—');
+
+        if (d.lat && d.lon){
+          const lat = +d.lat, lon = +d.lon;
+          const bbox = [lon-1.5, lat-1.5, lon+1.5, lat+1.5].join(',');
+          $('g-map').src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+        }
+        console.log('[visitors] geo via', p.name);
+        return; // first success wins
+      } catch(e){
+        errors.push(`${p.name}: ${e.message}`);
+      }
     }
+
+    // All providers failed — show clear diagnosis
+    console.warn('[visitors] all geo providers failed:', errors);
+    setText('g-ip',      'Blocked');
+    setText('g-country', 'Lookup blocked');
+    setText('g-city',    'Check ad-blocker / network');
+    setText('g-org',     'All 4 providers failed');
+    setText('g-tz',      Intl.DateTimeFormat().resolvedOptions().timeZone || '—');
+
+    // Show an inline diagnostic note
+    const diag = document.createElement('div');
+    diag.className = 'viz-note';
+    diag.style.borderLeftColor = '#ef4444';
+    diag.innerHTML = '<strong>Why IP lookup failed:</strong> All four IP-geolocation endpoints ' +
+      '(ipwho.is, geojs.io, freeipapi.com, ipapi.co) were blocked. The most common causes are: ' +
+      '<b>(1)</b> an ad-blocker / privacy extension (uBlock, Brave Shields, AdGuard) is blocking these domains as trackers, ' +
+      '<b>(2)</b> a corporate firewall or VPN is filtering the requests, or ' +
+      '<b>(3)</b> all four services hit their daily free-tier limit. ' +
+      'Disable the ad-blocker for this page to restore the lookup, or rely on Google Analytics 4 (already installed) for server-side location data that cannot be blocked.';
+    document.querySelector('.map-frame').after(diag);
   })();
 
 })();
