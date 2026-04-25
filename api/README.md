@@ -58,12 +58,13 @@ Wrangler prints a URL like `https://rvm-visitor-log.<your-account>.workers.dev`.
 That is your **API_BASE**.
 
 ### 6. Plug the API URL into the site
-Open `visitors.html` **and** `script.js` and set:
+
+Open **`config.js`** in the site root (one file — every HTML page loads
+it automatically) and set:
 
 ```js
-const API_BASE = 'https://rvm-visitor-log.<your-account>.workers.dev';
+window.RVM_API_BASE = 'https://rvm-visitor-log.<your-account>.workers.dev';
 ```
-(search both files for `API_BASE`).
 
 Commit, push — done. Every page load on the site now records one visit,
 and `https://riftvalleyminerals.com/visitors.html` shows the live

@@ -196,6 +196,39 @@
     text-transform:uppercase; letter-spacing:.12em;
     color:#8794a8; margin-top:.45rem;
   }
+  .visitors-toolbar {
+    display:flex; flex-wrap:wrap; gap:.6rem; align-items:center;
+    margin:.5rem 0 0;
+  }
+  .visitors-toolbar input[type="search"] {
+    flex:1; min-width:200px; max-width:380px;
+    background:#0e182a;
+    border:1px solid rgba(201,162,39,0.3);
+    border-radius:8px;
+    color:#e6ecf5;
+    padding:.55rem .9rem;
+    font-size:.88rem;
+    outline:none;
+    transition: border-color .2s ease;
+  }
+  .visitors-toolbar input[type="search"]:focus { border-color:#c9a227; }
+  .visitors-toolbar input[type="search"]::placeholder { color:#5b6679; }
+  .tb-btn {
+    background: transparent;
+    border:1px solid rgba(201,162,39,0.4);
+    color:#c9a227;
+    padding:.5rem .9rem;
+    border-radius:8px;
+    font-size:.82rem;
+    font-weight:600;
+    cursor:pointer;
+    transition: all .2s ease;
+    white-space:nowrap;
+  }
+  .tb-btn:hover { background: rgba(201,162,39,0.12); color:#f5d76e; }
+  .tb-btn.active { background:#c9a227; color:#0b1524; border-color:#c9a227; }
+  .tb-spacer { flex:1; }
+  .tb-meta { color:#7a8597; font-size:.8rem; }
   .visitors-table-wrap { overflow-x:auto; margin:1.25rem 0; }
   .visitors-table {
     width:100%;
@@ -321,6 +354,15 @@
     <div id="country-chips-wrap" style="display:none">
       <strong style="color:#c9a227;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase">Top Countries</strong>
       <div class="country-list" id="country-chips"></div>
+    </div>
+
+    <div class="visitors-toolbar">
+      <input type="search" id="vis-search" placeholder="Search country, city, ISP, OS, browser…" aria-label="Search visitors">
+      <button class="tb-btn" id="vis-refresh" type="button">↻ Refresh</button>
+      <button class="tb-btn" id="vis-auto"    type="button">⏱ Auto 30s</button>
+      <button class="tb-btn" id="vis-csv"     type="button">⬇ Export CSV</button>
+      <span class="tb-spacer"></span>
+      <span class="tb-meta" id="vis-meta">—</span>
     </div>
 
     <div class="visitors-table-wrap">
@@ -460,7 +502,7 @@
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
-<script src="script.js"></script>
+<script src="config.js"></script><script src="script.js"></script>
 <script>
 /* ============================================================
    VISITOR DASHBOARD
@@ -470,24 +512,75 @@
    ============================================================
 
    HOW TO CONNECT THE SERVER-SIDE LOG:
-   Deploy api/worker.js to Cloudflare (see api/README.md), then
-   replace the placeholder below with your deployed URL. */
-const API_BASE = window.RVM_API_BASE || ''; // e.g. 'https://rvm-visitor-log.yourname.workers.dev'
+   Deploy api/worker.js to Cloudflare (see api/README.md), then set
+   window.RVM_API_BASE in /config.js — that's the only edit needed. */
+const API_BASE = window.RVM_API_BASE || '';
 
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
   const setText = (id, v) => { const el = $(id); if (el) el.textContent = (v ?? '—'); };
 
-  /* ---------- 0. Fetch aggregated unique-IP table from Worker ---------- */
-  (async function loadAggregate(){
+  /* ---------- 0. Aggregated unique-IP table from Worker ---------- */
+  let cachedRows = [];        // last successful response, used for filter+CSV
+  let autoTimer  = null;
+
+  const fmtDate = iso => {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) +
+           ' ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  };
+
+  function escapeHtml(s){
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderRows(rows){
+    if (!rows.length){
+      $('visitors-rows').innerHTML =
+        '<tr><td colspan="12" style="text-align:center;color:#7a8597;padding:2rem">No matching visitors.</td></tr>';
+      return;
+    }
+    $('visitors-rows').innerHTML = rows.map((r, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td class="ip" title="${escapeHtml(r.ipHash || '')}">${escapeHtml(r.ipPrefix || '—')}</td>
+        <td>${escapeHtml(r.countryName || r.country || '—')}${r.country && r.countryName ? ` <span style="color:#8794a8">(${escapeHtml(r.country)})</span>` : ''}</td>
+        <td>${escapeHtml([r.city, r.region].filter(Boolean).join(', ') || '—')}</td>
+        <td>${escapeHtml(r.asOrg || '—')}</td>
+        <td>${escapeHtml(r.os || '—')}</td>
+        <td>${escapeHtml(r.browser || '—')}</td>
+        <td>${escapeHtml(r.device || '—')}</td>
+        <td>${escapeHtml(r.lastPage || '—')}</td>
+        <td>${fmtDate(r.first)}</td>
+        <td>${fmtDate(r.last)}</td>
+        <td class="visits">${(r.visits || 0).toLocaleString()}</td>
+      </tr>
+    `).join('');
+  }
+
+  function applyFilter(){
+    const q = ($('vis-search').value || '').trim().toLowerCase();
+    if (!q){ renderRows(cachedRows); $('vis-meta').textContent = `${cachedRows.length} rows`; return; }
+    const filtered = cachedRows.filter(r => {
+      const hay = [r.countryName, r.country, r.city, r.region, r.asOrg, r.os, r.browser, r.device, r.lastPage, r.ipPrefix, r.tz, r.lang]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    renderRows(filtered);
+    $('vis-meta').textContent = `${filtered.length} of ${cachedRows.length} rows`;
+  }
+
+  async function loadAggregate(){
     if (!API_BASE){
       $('setup-alert').style.display = 'block';
       $('visitors-rows').innerHTML = '<tr><td colspan="12" style="text-align:center;color:#7a8597;padding:2rem">' +
-        'Configure <code>window.RVM_API_BASE</code> in this page to display the server-side visitor log. See <code>api/README.md</code>.</td></tr>';
+        'Set <code>window.RVM_API_BASE</code> in <code>config.js</code> to display the server-side visitor log. See <code>api/README.md</code>.</td></tr>';
       setText('t-unique', '0'); setText('t-visits','0'); setText('t-countries','0'); setText('t-devices','0');
+      $('vis-meta').textContent = 'API not configured';
       return;
     }
+    $('vis-meta').textContent = 'Loading…';
     try {
       const res  = await fetch(API_BASE.replace(/\/+$/,'') + '/list', { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -499,54 +592,65 @@ const API_BASE = window.RVM_API_BASE || ''; // e.g. 'https://rvm-visitor-log.you
       setText('t-devices',   Object.keys(data.devices   || {}).length);
 
       // Country chips
-      const chipsWrap = $('country-chips');
       const entries = Object.entries(data.countries || {}).sort((a,b) => b[1]-a[1]);
       if (entries.length){
-        chipsWrap.innerHTML = entries.map(([k,v]) => `<span class="chip">${escapeHtml(k)} · ${v}</span>`).join('');
+        $('country-chips').innerHTML = entries.map(([k,v]) => `<span class="chip">${escapeHtml(k)} · ${v}</span>`).join('');
         $('country-chips-wrap').style.display = '';
+      } else {
+        $('country-chips-wrap').style.display = 'none';
       }
 
-      // Table rows — one per unique IP
-      const rows = data.rows || [];
-      if (!rows.length){
+      cachedRows = data.rows || [];
+      if (!cachedRows.length){
         $('visitors-rows').innerHTML =
           '<tr><td colspan="12" style="text-align:center;color:#7a8597;padding:2rem">No visitors logged yet. Visit any other page on the site to generate the first row.</td></tr>';
+        $('vis-meta').textContent = '0 rows · updated ' + fmtDate(new Date().toISOString());
         return;
       }
-      const fmtDate = iso => {
-        const d = new Date(iso);
-        return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) +
-               ' ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      };
-      $('visitors-rows').innerHTML = rows.map((r, i) => `
-        <tr>
-          <td>${i+1}</td>
-          <td class="ip" title="${escapeHtml(r.ipHash || '')}">${escapeHtml(r.ipPrefix || '—')}</td>
-          <td>${escapeHtml(r.countryName || r.country || '—')}${r.country && r.countryName ? ` <span style="color:#8794a8">(${escapeHtml(r.country)})</span>` : ''}</td>
-          <td>${escapeHtml([r.city, r.region].filter(Boolean).join(', ') || '—')}</td>
-          <td>${escapeHtml(r.asOrg || '—')}</td>
-          <td>${escapeHtml(r.os || '—')}</td>
-          <td>${escapeHtml(r.browser || '—')}</td>
-          <td>${escapeHtml(r.device || '—')}</td>
-          <td>${escapeHtml(r.lastPage || '—')}</td>
-          <td>${fmtDate(r.first)}</td>
-          <td>${fmtDate(r.last)}</td>
-          <td class="visits">${(r.visits || 0).toLocaleString()}</td>
-        </tr>
-      `).join('');
+      applyFilter();
+      $('vis-meta').textContent = `${cachedRows.length} rows · updated ${fmtDate(new Date().toISOString())}`;
     } catch(err){
       console.warn('Visitor log fetch failed', err);
       $('setup-alert').style.display = 'block';
       $('setup-alert').innerHTML = '<strong>⚠️ Could not reach the visitor-log API.</strong> ' +
-        'Check that the Cloudflare Worker at <code>' + escapeHtml(API_BASE) + '</code> is deployed and the URL is correct. Error: ' + escapeHtml(err.message);
+        'Check that the Cloudflare Worker at <code>' + escapeHtml(API_BASE) + '</code> is deployed. Error: ' + escapeHtml(err.message);
       $('visitors-rows').innerHTML = '<tr><td colspan="12" style="text-align:center;color:#ef4444;padding:2rem">API request failed — see alert above.</td></tr>';
       setText('t-unique','0'); setText('t-visits','0'); setText('t-countries','0'); setText('t-devices','0');
+      $('vis-meta').textContent = 'Fetch failed';
     }
-  })();
-
-  function escapeHtml(s){
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+
+  /* CSV export of currently-displayed (filtered) rows */
+  function exportCsv(){
+    const headers = ['#','IP Prefix','IP Hash','Country','Country Code','Region','City','Postal','Timezone','Latitude','Longitude','ASN','ISP','OS','Browser','Device','Screen','Language','Last Page','Referrer','First Seen','Last Seen','Visits','Sessions'];
+    const q = ($('vis-search').value || '').trim().toLowerCase();
+    const rows = q ? cachedRows.filter(r => {
+      const hay = [r.countryName,r.country,r.city,r.region,r.asOrg,r.os,r.browser,r.device,r.lastPage,r.ipPrefix,r.tz,r.lang].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    }) : cachedRows;
+    const esc = s => '"' + String(s ?? '').replace(/"/g,'""') + '"';
+    const lines = [headers.map(esc).join(',')];
+    rows.forEach((r, i) => {
+      lines.push([i+1, r.ipPrefix, r.ipHash, r.countryName, r.country, r.region, r.city, r.postal, r.tz, r.lat, r.lon, r.asn, r.asOrg, r.os, r.browser, r.device, r.screen, r.lang, r.lastPage, r.referrer, r.first, r.last, r.visits, r.sessions].map(esc).join(','));
+    });
+    const blob = new Blob([lines.join('\n')], { type:'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'rvm-visitors-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // Wire up controls
+  $('vis-search').addEventListener('input', applyFilter);
+  $('vis-refresh').addEventListener('click', loadAggregate);
+  $('vis-csv').addEventListener('click', exportCsv);
+  $('vis-auto').addEventListener('click', () => {
+    if (autoTimer){ clearInterval(autoTimer); autoTimer = null; $('vis-auto').classList.remove('active'); $('vis-auto').textContent = '⏱ Auto 30s'; }
+    else { autoTimer = setInterval(loadAggregate, 30000); $('vis-auto').classList.add('active'); $('vis-auto').textContent = '⏱ Auto ON'; }
+  });
+
+  // Initial load
+  loadAggregate();
 
   /* ---------- 1. Local visit counter — READ ONLY on this page ---------- */
   /* The counter is incremented by script.js on every OTHER page.
